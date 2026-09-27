@@ -23,23 +23,27 @@
   </nav>
 </header>
 
+<section class="reel" aria-label="形象片">
+  <div class="reel-frame">
+    <canvas id="reel" width="1920" height="1080" role="img" aria-label="Kaku 的 15 秒形象動畫：構圖引導提示到位時變成金色，20 款濾鏡一款款換過，拍立得吐出來慢慢顯影，底片機張數倒數，魔幻時刻的夕陽和動態島倒數，夜裡的長曝光車軌。"></canvas>
+  </div>
+  <div class="reel-controls">
+    <button id="reel-toggle" type="button" aria-controls="reel"><span aria-hidden="true" class="icon"></span><span class="label">暫停</span></button>
+    <a href="reel.mp4" download="kaku-reel.mp4">下載影片（MP4・15 秒）</a>
+  </div>
+</section>
+
 <main>
 
 <section class="hero">
-  <div class="hero-text">
+  <div>
     <p class="eyebrow">iPhone 相機 App・即將上架</p>
     <h1>教你站哪、<br>怎麼拿的底片感相機</h1>
+  </div>
+  <div class="hero-text">
     <p>幫別人拍照，常被抱怨「腿怎麼那麼短」「怎麼切到腳」。Kaku 分析畫面裡的人和場景，直接提示手機放低一點、鏡頭往上一點、人往中間站。到位時提示變成金色，手機輕震一下。</p>
     <p class="note">所有分析都在手機上完成，沒有帳號、沒有廣告、不蒐集資料。</p>
   </div>
-  <figure class="phone" aria-label="Kaku 人像模式的畫面示意">
-    <div class="screen">
-      <img src="img/portrait.jpg" alt="街上站著的人，套上柔光 160 濾鏡" width="900" height="1200">
-      <span class="pill good">✓ 剛好<small>頭頂留一格、腳貼底邊</small></span>
-      <span class="brackets" aria-hidden="true"></span>
-      <span class="tag">柔光 160 <em>Soft 160</em></span>
-    </div>
-  </figure>
 </section>
 
 <section id="guide" class="block">
@@ -156,10 +160,33 @@
 
 <footer class="foot">
   <p><a href="support.html">支援 Support</a> · <a href="privacy.html">隱私權政策 Privacy</a> · <a href="mailto:kaku@chung.men">kaku@chung.men</a></p>
-  <p class="small">頁面上的示範照片由 AI 生成（MiniMax），濾鏡效果是 Kaku 的濾鏡程式實際算出來的。<br lang="en">Demo photos on this page are AI-generated (MiniMax); the looks are rendered by Kaku's own filter code.</p>
+  <p class="small">頁面和形象片裡的示範照片由 AI 生成（MiniMax），濾鏡效果是 Kaku 的濾鏡程式實際算出來的。<br lang="en">Demo photos on this page and in the reel are AI-generated (MiniMax); the looks are rendered by Kaku's own filter code.</p>
   <p class="small">© 2026 Kaku</p>
 </footer>
 
-
+<script src="reel.js"></script>
+<script>
+(() => {
+  const canvas = document.getElementById('reel');
+  const button = document.getElementById('reel-toggle');
+  const reel = KakuReel.mount(canvas);
+  // 使用者按了暫停就一直停著；否則捲出畫面時自動停、捲回來再播，省電。
+  let held = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sync = () => {
+    button.querySelector('.label').textContent = reel.playing ? '暫停' : '播放';
+    button.dataset.state = reel.playing ? 'playing' : 'paused';
+  };
+  button.addEventListener('click', () => {
+    if (reel.playing) { reel.pause(); held = true; } else { reel.play(); held = false; }
+    sync();
+  });
+  new IntersectionObserver(([entry]) => {
+    if (held) return;
+    entry.isIntersecting ? reel.play() : reel.pause();
+    sync();
+  }, { threshold: 0.2 }).observe(canvas);
+  sync();
+})();
+</script>
 </body>
 </html>

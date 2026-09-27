@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaku 形象片</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 100vw; max-width: 1920px; aspect-ratio: 16 / 9; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="reel" width="1920" height="1080" aria-label="Kaku 的 15 秒形象動畫"></canvas>
+<script src="reel.js"></script>
+<script>window.reel = KakuReel.mount(document.getElementById('reel'));</script>
+</body>
+</html>
