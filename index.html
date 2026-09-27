@@ -28,8 +28,11 @@
     <canvas id="reel" width="1920" height="1080" role="img" aria-label="Kaku 的 15 秒形象動畫：構圖引導提示到位時變成金色，20 款濾鏡一款款換過，拍立得吐出來慢慢顯影，底片機張數倒數，魔幻時刻的夕陽和動態島倒數，夜裡的長曝光車軌。"></canvas>
   </div>
   <div class="reel-controls">
-    <button id="reel-toggle" type="button" aria-controls="reel"><span aria-hidden="true" class="icon"></span><span class="label">暫停</span></button>
-    <p class="downloads">下載影片（有音效）：<a href="reel.mp4" download="kaku-reel.mp4">橫式 16:9</a>・<a href="reel-vertical.mp4" download="kaku-reel-vertical.mp4">直式 9:16</a></p>
+    <div class="buttons">
+      <button id="reel-toggle" type="button" aria-controls="reel"><span aria-hidden="true" class="icon"></span><span class="label">暫停</span></button>
+      <button id="reel-sound" type="button" aria-pressed="false"><span aria-hidden="true" class="icon speaker"></span><span class="label">開聲音</span></button>
+    </div>
+    <p class="downloads">下載影片（有配樂）：<a href="reel.mp4" download="kaku-reel.mp4">橫式 16:9</a>・<a href="reel-vertical.mp4" download="kaku-reel-vertical.mp4">直式 9:16</a></p>
   </div>
 </section>
 
@@ -169,23 +172,45 @@
 (() => {
   const canvas = document.getElementById('reel');
   const button = document.getElementById('reel-toggle');
+  const sound = document.getElementById('reel-sound');
   // 手機直拿時換成直式（跟 home.css 的 media query 一樣）。
   const portrait = matchMedia('(orientation: portrait) and (max-width: 600px)');
   const reel = KakuReel.mount(canvas, { orientation: () => (portrait.matches ? 'portrait' : 'landscape') });
   portrait.addEventListener('change', () => reel.resize());
+
+  // 配樂：按了才載入、才播。播的時候畫面改用音樂的時間，兩邊才會一直對在拍子上。
+  const audio = new Audio('reel-audio.m4a');
+  audio.loop = true;
+  audio.preload = 'none';
+  let soundOn = false;
+  const startAudio = () => {
+    audio.currentTime = reel.time;
+    audio.play().then(() => reel.setClock(() => audio.currentTime)).catch(() => { soundOn = false; sync(); });
+  };
+  const stopAudio = () => { reel.setClock(null); audio.pause(); };
+  const play = () => { reel.play(); if (soundOn) startAudio(); };
+  const pause = () => { reel.pause(); if (soundOn) stopAudio(); };
+
   // 使用者按了暫停就一直停著；否則捲出畫面時自動停、捲回來再播，省電。
   let held = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const sync = () => {
     button.querySelector('.label').textContent = reel.playing ? '暫停' : '播放';
     button.dataset.state = reel.playing ? 'playing' : 'paused';
+    sound.querySelector('.label').textContent = soundOn ? '關聲音' : '開聲音';
+    sound.setAttribute('aria-pressed', String(soundOn));
   };
   button.addEventListener('click', () => {
-    if (reel.playing) { reel.pause(); held = true; } else { reel.play(); held = false; }
+    if (reel.playing) { pause(); held = true; } else { play(); held = false; }
+    sync();
+  });
+  sound.addEventListener('click', () => {
+    soundOn = !soundOn;
+    if (soundOn) { held = false; if (reel.playing) startAudio(); else play(); } else stopAudio();
     sync();
   });
   new IntersectionObserver(([entry]) => {
     if (held) return;
-    entry.isIntersecting ? reel.play() : reel.pause();
+    entry.isIntersecting ? play() : pause();
     sync();
   }, { threshold: 0.2 }).observe(canvas);
   sync();

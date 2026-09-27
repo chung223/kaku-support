@@ -29,7 +29,10 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
   font: 500 15px/1 var(--sans); color: var(--paper); background: var(--char); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
 .reel-controls button:hover { border-color: var(--brass); }
 .reel-controls button:focus-visible, .reel-controls a:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+.reel-controls .buttons { display: flex; gap: 8px; }
 .reel-controls .icon { width: 12px; height: 12px; background: var(--brass); }
+.reel-controls .icon.speaker { clip-path: polygon(0 32%, 32% 32%, 78% 0, 78% 100%, 32% 68%, 0 68%); }
+.reel-controls [aria-pressed="true"] { border-color: var(--brass); }
 .reel-controls [data-state="playing"] .icon { background: linear-gradient(90deg, var(--brass) 0 35%, transparent 35% 65%, var(--brass) 65%); }
 .reel-controls [data-state="paused"] .icon { clip-path: polygon(10% 0, 100% 50%, 10% 100%); }
 .reel-controls .downloads { margin: 0; color: var(--ash); text-align: right; }
@@ -91,6 +94,6 @@ h3 { font: 600 21px/1.4 var(--serif); margin: 14px 0 6px; }
   .reel-frame { aspect-ratio: 9 / 16; width: min(100%, calc((100svh - 190px) * 9 / 16)); margin: 0 auto;
     background-image: url(reel-poster-portrait.jpg); }
   .reel-controls { flex-direction: column; align-items: stretch; gap: 6px; }
-  .reel-controls button { align-self: flex-start; }
+  .reel-controls .buttons { align-self: flex-start; }
   .reel-controls .downloads { text-align: left; }
 }

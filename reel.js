@@ -7,6 +7,19 @@
   const SIZES = { landscape: [1920, 1080], portrait: [1080, 1920] };
   let W = 1920, H = 1080, P = false;
   const v = (landscape, portrait) => (P ? portrait : landscape);
+
+  // 對拍：配樂是 128 BPM，一小節 1.875 秒，15 秒剛好 8 小節。每一幕的切點對到拍子上：
+  // 左邊是實際秒數（配樂），右邊是動畫原本的時間，中間線性換算（各段只快慢 0.9–1.2 倍）。
+  const BEATS = [[0, 0], [1.875, 1.7], [3.75, 3.6], [4.6875, 4.75], [7.5, 7.6], [9.375, 9.8], [11.25, 12.0], [13.125, 13.4], [15, 15]];
+  function remap(x, from, to) {
+    for (let i = 1; i < BEATS.length; i++) {
+      const a = BEATS[i - 1], b = BEATS[i];
+      if (x <= b[from]) return a[to] + (b[to] - a[to]) * (x - a[from]) / (b[from] - a[from]);
+    }
+    return x;
+  }
+  const animTime = real => remap(real, 0, 1);
+  const realTime = anim => remap(anim, 1, 0);
   const C = {
     ink: '#0e0d0c', ink2: '#151412', char: '#1f1d1a', stone: '#2c2925', line: '#3b3732',
     paper: '#eee8dd', ash: '#a59e92', brass: '#c9a86a', brassHi: '#e3c68d', deepBlue: '#1f2b45',
@@ -646,7 +659,7 @@
 
   // 場記板式的角落資訊：章節、時間碼、底部進度條。開場與收尾不顯示。
   const CHAPTERS = [[1.7, '01', '構圖引導'], [4.75, '02', '濾鏡'], [7.6, '03', '拍立得・底片機'], [9.8, '04', '魔幻時刻'], [12.0, '05', '長曝光']];
-  function hud(ctx, t) {
+  function hud(ctx, t, time) {
     const a = seg(t, 1.8, 2.2) * (1 - seg(t, 13.3, 13.5));
     if (a <= 0) return;
     ctx.save();
@@ -660,21 +673,23 @@
     text(ctx, chapter[1], 72, 70, { size: 22, font: MONO, color: C.brass });
     text(ctx, chapter[2], 112, 70, { size: 24, font: SANS, color: C.paper, alpha: 0.85 });
     ctx.restore();
-    const frame = Math.floor(t * 30);
+    const frame = Math.floor(time * 30);
     const tc = `00:00:${String(Math.floor(frame / 30)).padStart(2, '0')}:${String(frame % 30).padStart(2, '0')}`;
     text(ctx, tc, W - 72, 70, { size: 22, font: MONO, color: C.paper, align: 'right', alpha: 0.7 });
     if (P) text(ctx, '示範照片由 AI 生成', W / 2, 272, { size: 22, font: SANS, color: C.ash, align: 'center', alpha: 0.8 });
     else text(ctx, '示範照片由 AI 生成', 72, H - 62, { size: 18, font: SANS, color: C.ash, alpha: 0.75 });
     ctx.fillStyle = 'rgba(238,232,221,0.14)'; ctx.fillRect(72, H - 44, W - 144, 2);
-    ctx.fillStyle = C.brass; ctx.fillRect(72, H - 44, (W - 144) * (t / DURATION), 2);
-    for (const [at] of CHAPTERS) ctx.fillRect(72 + (W - 144) * (at / DURATION) - 1, H - 50, 2, 14);
+    ctx.fillStyle = C.brass; ctx.fillRect(72, H - 44, (W - 144) * (time / DURATION), 2);
+    for (const [at] of CHAPTERS) ctx.fillRect(72 + (W - 144) * (realTime(at) / DURATION) - 1, H - 50, 2, 14);
     ctx.restore();
   }
 
-  function render(ctx, t, orientation = 'landscape') {
+  // time 是實際秒數（跟配樂同一個時鐘），畫面用換算後的動畫時間 t。
+  function render(ctx, time, orientation = 'landscape') {
     [W, H] = SIZES[orientation];
     P = orientation === 'portrait';
-    t = ((t % DURATION) + DURATION) % DURATION;
+    time = ((time % DURATION) + DURATION) % DURATION;
+    const t = animTime(time);
     ctx.save();
     ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H);
     // 開場的快門抖動
@@ -690,7 +705,7 @@
     else if (t < 13.4) sceneTrails(ctx, t);
     else sceneOutro(ctx, t);
     ctx.restore();
-    hud(ctx, t);
+    hud(ctx, t, time);
     for (const at of [7.6, 9.8, 12.0, 13.4]) shutter(ctx, t, at);
     // 暗角與顆粒
     const vig = ctx.createRadialGradient(W / 2, H / 2, v(H * 0.35, 480), W / 2, H / 2, v(H * 0.95, 1150));
@@ -698,7 +713,7 @@
     ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
     ctx.save();
     ctx.globalAlpha = 0.07; ctx.globalCompositeOperation = 'overlay';
-    const frame = Math.floor(t * 24);
+    const frame = Math.floor(time * 24);
     ctx.translate(-(frame * 97) % 256, -(frame * 61) % 256);
     ctx.fillStyle = ctx.createPattern(grain, 'repeat');
     ctx.fillRect(0, 0, W + 256, H + 256);
@@ -712,6 +727,7 @@
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const orient = () => (typeof orientation === 'function' ? orientation() : orientation);
     let playing = false, loaded = false, start = null, pausedAt = 14.6; // 靜止時停在字都出來的收尾畫面
+    let clock = null; // 開聲音時改用配樂的播放時間，畫面才不會跟音樂跑掉
     let current = orient();
     function size() {
       current = orient();
@@ -727,8 +743,11 @@
     if (!exporting) window.addEventListener('resize', size);
     const draw = now => {
       if (!playing) return;
-      if (start === null) start = now - pausedAt * 1000;
-      pausedAt = ((now - start) / 1000) % DURATION;
+      if (clock) pausedAt = clock() % DURATION;
+      else {
+        if (start === null) start = now - pausedAt * 1000;
+        pausedAt = ((now - start) / 1000) % DURATION;
+      }
       render(ctx, pausedAt, current);
       requestAnimationFrame(draw);
     };
@@ -737,6 +756,8 @@
       resize: size,
       get orientation() { return current; },
       get playing() { return playing; },
+      get time() { return pausedAt; },
+      setClock(fn) { clock = fn; start = null; },
       play() {
         if (playing) return;
         playing = true; start = null;
