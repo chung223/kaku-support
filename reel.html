@@ -10,11 +10,17 @@
 <style>
   html, body { margin: 0; background: #000; }
   canvas { display: block; width: 100vw; max-width: 1920px; aspect-ratio: 16 / 9; margin: 0 auto; }
+  canvas.portrait { width: min(100vw, calc(100vh * 9 / 16)); aspect-ratio: 9 / 16; }
 </style>
 </head>
 <body>
 <canvas id="reel" width="1920" height="1080" aria-label="Kaku 的 15 秒形象動畫"></canvas>
 <script src="reel.js"></script>
-<script>window.reel = KakuReel.mount(document.getElementById('reel'));</script>
+<script>
+  // ?orient=portrait 看直式；?export=1 給逐格輸出工具用。
+  const canvas = document.getElementById('reel');
+  if (new URLSearchParams(location.search).get('orient') === 'portrait') canvas.classList.add('portrait');
+  window.reel = KakuReel.mount(canvas);
+</script>
 </body>
 </html>

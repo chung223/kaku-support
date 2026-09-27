@@ -32,8 +32,9 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 .reel-controls .icon { width: 12px; height: 12px; background: var(--brass); }
 .reel-controls [data-state="playing"] .icon { background: linear-gradient(90deg, var(--brass) 0 35%, transparent 35% 65%, var(--brass) 65%); }
 .reel-controls [data-state="paused"] .icon { clip-path: polygon(10% 0, 100% 50%, 10% 100%); }
-.reel-controls a { color: var(--ash); }
-.reel-controls a:hover { color: var(--paper); }
+.reel-controls .downloads { margin: 0; color: var(--ash); text-align: right; }
+.reel-controls a { color: var(--paper); }
+.reel-controls a:hover { color: var(--brass); }
 .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; padding: 56px 0; }
 .hero h1 { margin: 0; }
 .eyebrow { color: var(--brass); font-size: 15px; letter-spacing: 0.08em; margin: 0 0 12px; }
@@ -84,4 +85,12 @@ h3 { font: 600 21px/1.4 var(--serif); margin: 14px 0 6px; }
   .looks { grid-template-columns: repeat(2, 1fr); }
   .reel { width: calc(100% - 32px); margin-top: 16px; }
   .reel-controls { font-size: 14px; }
+}
+/* 手機直拿：直式形象片，高度不超過一個畫面（扣掉頂欄與按鈕）。 */
+@media (orientation: portrait) and (max-width: 600px) {
+  .reel-frame { aspect-ratio: 9 / 16; width: min(100%, calc((100svh - 190px) * 9 / 16)); margin: 0 auto;
+    background-image: url(reel-poster-portrait.jpg); }
+  .reel-controls { flex-direction: column; align-items: stretch; gap: 6px; }
+  .reel-controls button { align-self: flex-start; }
+  .reel-controls .downloads { text-align: left; }
 }

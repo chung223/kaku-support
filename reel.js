@@ -1,7 +1,12 @@
 // Kaku 形象片：15 秒的動態影像，畫在 canvas 上。render(t) 是純函式（同一個 t 畫出同一格），
 // 網頁上用 requestAnimationFrame 循環播放；?export=1 時由外部逐格呼叫、截圖、編成影片。
 (() => {
-  const W = 1920, H = 1080, DURATION = 15;
+  // 橫式 1920×1080（網頁、YouTube）與直式 1080×1920（手機、IG Reels）共用同一條時間軸，每一幕各自排版。
+  // 直式的重要文字避開 IG 介面：上 250、下 440、右 140 px 以內不放字。
+  const DURATION = 15;
+  const SIZES = { landscape: [1920, 1080], portrait: [1080, 1920] };
+  let W = 1920, H = 1080, P = false;
+  const v = (landscape, portrait) => (P ? portrait : landscape);
   const C = {
     ink: '#0e0d0c', ink2: '#151412', char: '#1f1d1a', stone: '#2c2925', line: '#3b3732',
     paper: '#eee8dd', ash: '#a59e92', brass: '#c9a86a', brassHi: '#e3c68d', deepBlue: '#1f2b45',
@@ -151,7 +156,8 @@
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, h); ctx.fillRect(0, H - h, W, h);
     ctx.fillStyle = C.brass; ctx.globalAlpha = e;
-    ctx.fillRect(W / 2 - 360 * e, H / 2 - 1, 720 * e, 2);
+    const bar = v(360, 300);
+    ctx.fillRect(W / 2 - bar * e, H / 2 - 1, bar * 2 * e, 2);
     ctx.globalAlpha = 1;
   }
   function flash(ctx, t, at, dur = 0.22, strength = 0.85) {
@@ -162,10 +168,13 @@
   }
 
   // ---------- 取景框：前 7.6 秒的主角 ----------
-  const F0 = { x: 690, y: 180, w: 540, h: 720 };   // 開場：置中
-  const F1 = { x: 1090, y: 130, w: 615, h: 820 };  // 構圖引導：右邊
-  const F2 = { x: 250, y: 130, w: 615, h: 820 };   // 濾鏡：左邊
+  // 橫式：開場置中 → 構圖引導在右 → 濾鏡在左。直式：字在上、框在下。
+  const FRAMES = {
+    landscape: [{ x: 690, y: 180, w: 540, h: 720 }, { x: 1090, y: 130, w: 615, h: 820 }, { x: 250, y: 130, w: 615, h: 820 }],
+    portrait: [{ x: 270, y: 600, w: 540, h: 720 }, { x: 240, y: 670, w: 600, h: 800 }, { x: 240, y: 580, w: 600, h: 800 }],
+  };
   function frameAt(t) {
+    const [F0, F1, F2] = FRAMES[P ? 'portrait' : 'landscape'];
     if (t < 1.65) return F0;
     if (t < 2.1) return lerpRect(F0, F1, eio3(seg(t, 1.65, 2.1)));
     if (t < 4.6) return F1;
@@ -272,9 +281,10 @@
     ctx.save();
     ctx.globalAlpha = 1 - leave;
     ctx.translate(-leave * 300, 0);
-    riseText(ctx, '教你站哪、', 170, 470, t, 1.95, { size: 118 });
-    riseText(ctx, '怎麼拿。', 170, 612, t, 2.2, { size: 118 });
-    text(ctx, '人像・風景・美食　即時構圖引導', 176, 706, { size: 38, color: C.ash, alpha: eo3(seg(t, 2.6, 3.0)) });
+    const [tx, ty1, ty2, ty3] = v([170, 470, 612, 706], [240, 420, 540, 612]);
+    riseText(ctx, '教你站哪、', tx, ty1, t, 1.95, { size: v(118, 112) });
+    riseText(ctx, '怎麼拿。', tx, ty2, t, 2.2, { size: v(118, 112) });
+    text(ctx, '人像・風景・美食　即時構圖引導', tx + 6, ty3, { size: v(38, 34), color: C.ash, alpha: eo3(seg(t, 2.6, 3.0)) });
     ctx.restore();
   }
 
@@ -334,31 +344,37 @@
     ctx.save();
     ctx.globalAlpha = appear;
     const shown = settle ? 1 : index;
-    text(ctx, slicing ? '20 / 20' : `${String(shown).padStart(2, '0')} / 20`, 1000, 250, { size: 40, font: MONO, color: C.brass, alpha: settle ? 0.45 : 1 });
+    const [nx, cy0, ny, ey] = v([1000, 250, 470, 540], [240, 330, 478, 532]);
+    text(ctx, slicing ? '20 / 20' : `${String(shown).padStart(2, '0')} / 20`, nx, cy0, { size: v(40, 34), font: MONO, color: C.brass, alpha: settle ? 0.45 : 1 });
     // 名字翻牌：新的從下面上來。
     let name, english, flip;
     if (settle) { [, name, english] = LOOKS[1]; flip = eoBack(seg(t, SETTLE, SETTLE + 0.3)); }
     else if (slicing) { name = '全部 20 款'; english = 'All twenty looks'; flip = eo3(seg(t, SLICES, SLICES + 0.25)); }
     else { [, name, english] = LOOKS[index]; flip = eo3(clamp(local / 0.45)); }
     ctx.save();
-    ctx.beginPath(); ctx.rect(990, 300, 900, 250); ctx.clip();
-    text(ctx, name, 1000, 470 + (1 - flip) * 120, { size: settle ? 190 : 150, weight: 600, alpha: flip });
+    const nameSize = settle ? v(190, 150) : v(150, 120);
+    ctx.beginPath(); ctx.rect(nx - 10, ny - v(170, 150), W - nx, v(250, 190)); ctx.clip();
+    text(ctx, name, nx, ny + (1 - flip) * 120, { size: nameSize, weight: 600, alpha: flip });
     ctx.restore();
-    text(ctx, english, 1006, 540, { size: 44, font: SERIF, color: C.ash, alpha: flip });
-    text(ctx, '20 款底片與復古濾鏡', 1000, 660, { size: 46, weight: 600, alpha: eo3(seg(t, 5.1, 5.5)) });
-    text(ctx, '取景時就看得到，拍到的就是看到的', 1000, 720, { size: 34, color: C.ash, alpha: eo3(seg(t, 5.3, 5.7)) });
-    // 色票列：目前這款在 x = 1250，放大、描黃銅邊。
-    const chip = 74, gap = 22;
+    text(ctx, english, nx + 6, ey, { size: v(44, 36), font: SERIF, color: C.ash, alpha: flip });
+    if (P) {
+      text(ctx, '20 款底片與復古濾鏡', 840, 330, { size: 30, color: C.ash, align: 'right', alpha: eo3(seg(t, 5.1, 5.5)) });
+    } else {
+      text(ctx, '20 款底片與復古濾鏡', 1000, 660, { size: 46, weight: 600, alpha: eo3(seg(t, 5.1, 5.5)) });
+      text(ctx, '取景時就看得到，拍到的就是看到的', 1000, 720, { size: 34, color: C.ash, alpha: eo3(seg(t, 5.3, 5.7)) });
+    }
+    // 色票列：目前這款放大、描黃銅邊（橫式在右下 x = 1250，直式在框下面置中）。
+    const chip = v(74, 60), gap = v(22, 18), [sx0, sy0] = v([1250, 880], [540, 1440]);
     const run = Math.min(raw, count - 1);
     const position = settle ? lerp(run, 1, eio3(seg(t, SETTLE, SETTLE + 0.35))) : run;
     for (let i = 0; i < count; i++) {
-      const x = 1250 + (i - position) * (chip + gap);
-      if (x < 900 || x > W + chip) continue;
+      const x = sx0 + (i - position) * (chip + gap);
+      if (x < v(900, -chip) || x > W + chip) continue;
       const focus = Math.max(0, 1 - Math.abs(i - position));
       const s = chip * (1 + 0.3 * focus);
-      const y = 880 - s / 2;
+      const y = sy0 - s / 2;
       ctx.save();
-      ctx.globalAlpha = appear * clamp((x - 900) / 120);
+      ctx.globalAlpha = appear * (P ? clamp(x / 140) * clamp((W - x) / 140) : clamp((x - 900) / 120));
       ctx.beginPath(); ctx.roundRect(x - s / 2, y, s, s, s * 0.24); ctx.clip();
       const [, , , c1, c2, c3] = LOOKS[i];
       ctx.fillStyle = c1; ctx.fillRect(x - s / 2, y, s, s / 3 + 1);
@@ -377,11 +393,11 @@
   function sceneInstant(ctx, t) {
     ctx.fillStyle = C.ink2; ctx.fillRect(0, 0, W, H);
     // 相紙出口
-    const slotX = 610, slotY = 900, slotW = 640;
+    const [slotX, slotY, slotW] = v([610, 900, 640], [540, 980, 560]);
     ctx.fillStyle = '#050505';
     ctx.beginPath(); ctx.roundRect(slotX - slotW / 2, slotY - 12, slotW, 24, 12); ctx.fill();
     const img = images.print;
-    const pw = 500, ph = img ? pw * img.height / img.width : 750;
+    const pw = v(500, 420), ph = img ? pw * img.height / img.width : pw * 1.5;
     const eject = eoExpo(seg(t, 7.72, 8.45));
     const settleRot = eio3(seg(t, 8.3, 8.9));
     ctx.save();
@@ -397,58 +413,64 @@
     ctx.fillStyle = C.deepBlue; ctx.globalAlpha = 1 - dev;
     ctx.fillRect(-pw / 2 + 0.057 * unit, -ph / 2 + 0.076 * unit, unit, ph - (0.076 + 0.26) * unit);
     ctx.restore();
-    text(ctx, '拍立得', slotX, 968, { size: 46, weight: 600, align: 'center', alpha: eo3(seg(t, 8.1, 8.5)) });
-    text(ctx, '拍完從下面吐出來，慢慢顯影', slotX, 1008, { size: 28, color: C.ash, align: 'center', alpha: eo3(seg(t, 8.3, 8.7)) });
+    text(ctx, '拍立得', slotX, slotY + v(68, 60), { size: v(46, 44), weight: 600, align: 'center', alpha: eo3(seg(t, 8.1, 8.5)) });
+    text(ctx, '拍完從下面吐出來，慢慢顯影', slotX, slotY + v(108, 102), { size: v(28, 28), color: C.ash, align: 'center', alpha: eo3(seg(t, 8.3, 8.7)) });
 
-    // 右邊：底片機。張數像里程表一樣捲。
-    const bx = 1180, alpha = eo3(seg(t, 7.8, 8.2));
+    // 底片機：張數像計數輪一樣捲（橫式在右邊，直式在拍立得下面）。
+    const alpha = eo3(seg(t, 7.8, 8.2));
     ctx.save(); ctx.globalAlpha = alpha;
-    text(ctx, '底片機', bx, 330, { size: 110, weight: 600 });
-    text(ctx, '一卷 24 張・沖洗後才看得到', bx + 4, 400, { size: 36, color: C.ash });
-    // 底片條：齒孔往左跑。
-    const stripY = 470, stripH = 300;
+    if (P) {
+      text(ctx, '底片機', 540, 1210, { size: 80, weight: 600, align: 'center' });
+      text(ctx, '一卷 24 張・沖洗後才看得到', 540, 1262, { size: 30, color: C.ash, align: 'center' });
+    } else {
+      text(ctx, '底片機', 1180, 330, { size: 110, weight: 600 });
+      text(ctx, '一卷 24 張・沖洗後才看得到', 1184, 400, { size: 36, color: C.ash });
+    }
+    // 底片條：齒孔往左跑，片邊有橘色印字。
+    const [stripX, stripY, stripW, stripH] = v([1140, 470, 760, 300], [0, 1296, 1080, 200]);
     const film = ctx.createLinearGradient(0, stripY, 0, stripY + stripH);
     film.addColorStop(0, '#3a2a17'); film.addColorStop(0.5, '#2a1e11'); film.addColorStop(1, '#3a2a17');
-    ctx.fillStyle = film; ctx.fillRect(bx - 40, stripY, 760, stripH);
+    ctx.fillStyle = film; ctx.fillRect(stripX, stripY, stripW, stripH);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(stripX, stripY, stripW, stripH); ctx.clip();
     const shift = (t * 260) % 60;
     ctx.fillStyle = '#0b0a09';
-    for (let x = bx - 40 - shift; x < bx + 720; x += 60) {
+    for (let x = stripX - shift; x < stripX + stripW; x += 60) {
       ctx.beginPath(); ctx.roundRect(x + 12, stripY + 16, 30, 20, 4); ctx.fill();
       ctx.beginPath(); ctx.roundRect(x + 12, stripY + stripH - 36, 30, 20, 4); ctx.fill();
     }
+    for (let k = -1; k < 5; k++) {
+      const x = stripX + k * 240 - ((t * 260) % 240);
+      text(ctx, `KAKU 400  ${24 - k}  ▸${24 - k}A`, x, stripY + stripH - 44, { size: 18, font: MONO, color: '#e0813a', alpha: 0.75 });
+    }
+    ctx.restore();
     // 計數窗：24 → 0。個位一直轉，十位只在個位跨過 0 的那一格才跟著轉，跟真的計數輪一樣。
     const value = lerp(24, 0, eio3(seg(t, 8.0, 9.35)));
-    const fontSize = 170, digitsY = stripY + stripH / 2 + 62;
+    const fontSize = v(170, 124), winW = fontSize * 1.47, winH = fontSize * 1.12;
+    const winX = v(1300, 540 - winW / 2 - 24), digitsY = stripY + stripH / 2 + fontSize * 0.365;
+    const winY = digitsY - fontSize * 0.92;
     ctx.fillStyle = '#0b0a09';
-    ctx.beginPath(); ctx.roundRect(bx + 120, digitsY - fontSize * 0.92, 250, fontSize * 1.12, 22); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(winX, winY, winW, winH, fontSize * 0.13); ctx.fill();
     ctx.save();
-    ctx.beginPath(); ctx.rect(bx + 120, digitsY - fontSize * 0.92, 250, fontSize * 1.12); ctx.clip();
+    ctx.beginPath(); ctx.rect(winX, winY, winW, winH); ctx.clip();
     ctx.font = `600 ${fontSize}px ${MONO}`; ctx.fillStyle = C.brass; ctx.textBaseline = 'alphabetic';
     const ones = value % 10, tens = Math.floor(value / 10) + Math.max(0, ones - 9);
-    const drawDigit = (v, x) => {
-      const base = Math.floor(v), frac = v - base;
+    const drawDigit = (d0, x) => {
+      const base = Math.floor(d0), frac = d0 - base;
       for (let k = 0; k <= 1; k++) {
         const d = ((base + k) % 10 + 10) % 10;
         ctx.fillText(String(d), x, digitsY + (frac - k) * fontSize * 1.05);
       }
     };
-    drawDigit(tens, bx + 140);
-    drawDigit(ones, bx + 250);
+    drawDigit(tens, winX + fontSize * 0.118);
+    drawDigit(ones, winX + fontSize * 0.765);
     ctx.restore();
     // 窗上下的陰影，讓數字像在轉輪上。
-    const shade = ctx.createLinearGradient(0, digitsY - fontSize * 0.92, 0, digitsY + fontSize * 0.2);
+    const shade = ctx.createLinearGradient(0, winY, 0, winY + winH);
     shade.addColorStop(0, 'rgba(0,0,0,0.7)'); shade.addColorStop(0.25, 'rgba(0,0,0,0)');
     shade.addColorStop(0.75, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,0.7)');
-    ctx.fillStyle = shade; ctx.fillRect(bx + 120, digitsY - fontSize * 0.92, 250, fontSize * 1.12);
-    // 片邊字：像真底片邊緣的橘色印字。
-    ctx.save();
-    ctx.beginPath(); ctx.rect(bx - 40, stripY, 760, stripH); ctx.clip();
-    for (let k = -1; k < 4; k++) {
-      const x = bx - 40 + k * 240 - ((t * 260) % 240);
-      text(ctx, `KAKU 400  ${24 - k}  ▸${24 - k}A`, x, stripY + stripH - 44, { size: 18, font: MONO, color: '#e0813a', alpha: 0.75 });
-    }
-    ctx.restore();
-    text(ctx, '張', bx + 400, digitsY - 8, { size: 60, color: C.ash });
+    ctx.fillStyle = shade; ctx.fillRect(winX, winY, winW, winH);
+    text(ctx, '張', winX + winW + v(30, 20), digitsY - 8, { size: v(60, 46), color: C.ash });
     ctx.restore();
   }
 
@@ -456,15 +478,15 @@
   function sceneGolden(ctx, t) {
     const p = seg(t, 9.8, 12.0);
     const blue = eio3(seg(t, 10.7, 11.8));
-    const horizon = 700;
+    const horizon = v(700, 1180);
     const sky = ctx.createLinearGradient(0, 0, 0, horizon);
     sky.addColorStop(0, mix('#324266', '#0b1428', blue));
     sky.addColorStop(0.55, mix('#e39a55', '#2c3e68', blue));
     sky.addColorStop(1, mix('#f6cf8f', '#6f84b0', blue));
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, horizon);
     // 太陽
-    const sx = lerp(1180, 1480, eio3(p)), sy = lerp(300, horizon + 90, eio3(p));
-    const glow = ctx.createRadialGradient(sx, sy, 10, sx, sy, 380);
+    const sx = lerp(v(1180, 700), v(1480, 790), eio3(p)), sy = lerp(v(300, 760), horizon + 90, eio3(p));
+    const glow = ctx.createRadialGradient(sx, sy, 10, sx, sy, v(380, 440));
     glow.addColorStop(0, `rgba(255,214,150,${0.75 * (1 - blue)})`);
     glow.addColorStop(1, 'rgba(255,214,150,0)');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, horizon);
@@ -476,12 +498,14 @@
     ctx.fillStyle = mix('#8a5a44', '#26365a', blue);
     ctx.beginPath(); ctx.moveTo(0, horizon);
     const drift = (t - 9.8) * 18;
-    for (let x = -100; x <= W + 100; x += 60) ctx.lineTo(x - drift, 560 + Math.sin(x * 0.006 + 1.3) * 40 + Math.sin(x * 0.017) * 14);
+    for (let x = -100; x <= W + 100; x += 60) ctx.lineTo(x - drift, horizon - 140 + Math.sin(x * 0.006 + 1.3) * 40 + Math.sin(x * 0.017) * 14);
     ctx.lineTo(W, horizon); ctx.fill();
     // 山的剪影
     ctx.fillStyle = mix('#3b2d2a', '#0e1424', blue);
     ctx.beginPath(); ctx.moveTo(0, horizon);
-    const ridge = [[0, 600], [260, 540], [420, 610], [640, 520], [900, 640], [1140, 560], [1380, 630], [1620, 540], [1920, 620], [1920, horizon]];
+    const ridge = v([[0, 600], [260, 540], [420, 610], [640, 520], [900, 640], [1140, 560], [1380, 630], [1620, 540], [1920, 620]],
+      [[0, 1090], [180, 1020], [330, 1100], [520, 1010], [700, 1120], [880, 1040], [1080, 1100]]);
+    ridge.push([W, horizon]);
     for (const [x, y] of ridge) ctx.lineTo(x, y);
     ctx.fill();
     // 水面與倒影
@@ -490,24 +514,25 @@
     water.addColorStop(1, mix('#2a1f1c', '#070b16', blue));
     ctx.fillStyle = water; ctx.fillRect(0, horizon, W, H - horizon);
     for (let i = 0; i < 16; i++) {
-      const y = horizon + 14 + i * 22, w = (240 - i * 10) * (1 - blue * 0.7);
+      const y = horizon + 14 + i * v(22, 30), w = (240 - i * 10) * (1 - blue * 0.7);
       ctx.fillStyle = `rgba(255,210,150,${(0.5 - i * 0.025) * (1 - blue)})`;
       ctx.fillRect(sx - w / 2 + Math.sin(t * 4 + i) * 12, y, w, 4);
     }
-    const scrim = ctx.createLinearGradient(0, 0, 1100, 0);
+    const scrim = P ? ctx.createLinearGradient(0, 200, 0, 760) : ctx.createLinearGradient(0, 0, 1100, 0);
     scrim.addColorStop(0, 'rgba(8,8,10,0.55)'); scrim.addColorStop(1, 'rgba(8,8,10,0)');
-    ctx.fillStyle = scrim; ctx.fillRect(0, 0, 1100, H);
+    ctx.fillStyle = scrim; ctx.fillRect(0, 0, v(1100, W), v(H, 760));
     // 字
     const inA = eo3(seg(t, 9.95, 10.35));
-    text(ctx, '魔幻時刻', 150, 330, { size: 120, weight: 600, alpha: inA * (1 - blue) });
-    text(ctx, '藍調時刻', 150, 330, { size: 120, weight: 600, alpha: blue });
+    const [gx, gy, galign] = v([150, 330, 'left'], [540, 450, 'center']);
+    text(ctx, '魔幻時刻', gx, gy, { size: 120, weight: 600, align: galign, alpha: inA * (1 - blue) });
+    text(ctx, '藍調時刻', gx, gy, { size: 120, weight: 600, align: galign, alpha: blue });
     const clock = 17 * 60 + 16 + Math.floor(eio3(p) * 53); // 17:16 → 18:09
     const hh = Math.floor(clock / 60), mm = clock % 60;
-    text(ctx, `${hh}:${String(mm).padStart(2, '0')}`, 156, 420, { size: 64, font: MONO, color: C.brassHi, alpha: inA });
-    text(ctx, '算好今天的光，快到了提醒你', 156, 480, { size: 34, color: C.paper, alpha: eo3(seg(t, 10.2, 10.6)) * 0.9 });
+    text(ctx, `${hh}:${String(mm).padStart(2, '0')}`, gx + v(6, 0), gy + 90, { size: 64, font: MONO, color: C.brassHi, align: galign, alpha: inA });
+    text(ctx, '算好今天的光，快到了提醒你', gx + v(6, 0), gy + 150, { size: 34, color: C.paper, align: galign, alpha: eo3(seg(t, 10.2, 10.6)) * 0.9 });
     // 動態島：從小膠囊展開，倒數。
     const grow = eoBack(seg(t, 10.0, 10.45));
-    const iw = lerp(160, 540, grow), ih = lerp(46, 76, grow);
+    const iw = lerp(160, v(540, 520), grow), ih = lerp(46, v(76, 72), grow);
     ctx.fillStyle = '#000';
     ctx.beginPath(); ctx.roundRect(W / 2 - iw / 2, 40, iw, ih, ih / 2); ctx.fill();
     if (grow > 0.6) {
@@ -526,23 +551,25 @@
     // 星軌：繞著右上方的北極星轉，越畫越長。
     const sweep = eo3(seg(t, 12.0, 13.3)) * 0.9;
     ctx.save();
-    ctx.beginPath(); ctx.rect(0, 0, W, H * 0.62); ctx.clip();
+    const ground = v(H * 0.62, 1250);
+    ctx.beginPath(); ctx.rect(0, 0, W, ground); ctx.clip();
     ctx.lineCap = 'round';
     for (let i = 0; i < 150; i++) {
-      const r = 16 + rand(i + 7) * 1150, a0 = rand(i + 91) * Math.PI * 2;
+      const r = 16 + rand(i + 7) * v(1150, 1000), a0 = rand(i + 91) * Math.PI * 2;
       ctx.strokeStyle = `rgba(${200 + rand(i) * 55},${210 + rand(i + 3) * 45},255,${0.15 + rand(i + 5) * 0.5})`;
       ctx.lineWidth = 0.8 + rand(i + 11) * 1.6;
-      ctx.beginPath(); ctx.arc(1560, 150, r, a0, a0 + sweep + 0.01); ctx.stroke();
+      ctx.beginPath(); ctx.arc(v(1560, 760), v(150, 560), r, a0, a0 + sweep + 0.01); ctx.stroke();
     }
     ctx.restore();
     // 大樓剪影與窗
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < v(18, 11); i++) {
       const x = i * 112 - 30, bw = 70 + rand(i) * 90;
-      const bh = x < 1000 ? 170 + rand(i + 50) * 150 : 220 + rand(i + 50) * 250; // 左邊矮，留位置給字；天空留給星軌
-      ctx.fillStyle = '#0a0e18'; ctx.fillRect(x, H * 0.62 - bh, bw, bh);
-      for (let j = 0; j < 14; j++) {
-        const wy = H * 0.62 - bh + 20 + Math.floor(j / 3) * 46;
-        if (wy + 18 < H * 0.62 - 10 && rand(i * 31 + j) > 0.55) {
+      // 橫式左邊矮，留位置給字；天空留給星軌。
+      const bh = P ? 200 + rand(i + 50) * 360 : x < 1000 ? 170 + rand(i + 50) * 150 : 220 + rand(i + 50) * 250;
+      ctx.fillStyle = '#0a0e18'; ctx.fillRect(x, ground - bh, bw, bh);
+      for (let j = 0; j < v(14, 20); j++) {
+        const wy = ground - bh + 20 + Math.floor(j / 3) * 46;
+        if (wy + 18 < ground - 10 && rand(i * 31 + j) > 0.55) {
           ctx.fillStyle = `rgba(255,214,150,${0.25 + rand(j + i) * 0.45})`;
           ctx.fillRect(x + 10 + (j % 3) * (bw / 3.4), wy, 12, 18);
         }
@@ -564,26 +591,27 @@
       for (let k = 0; k <= n; k++) {
         const u = k / steps;
         const x = lerp(-80, W + 80, u);
-        const y = 880 - offset * 0.9 + Math.sin(u * Math.PI) * -(170 + offset * 0.6) + u * 40;
+        const y = v(880, 1480) - offset * 0.9 + Math.sin(u * Math.PI) * -(v(170, 120) + offset * 0.6) + u * 40;
         k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.stroke();
       if (draw > 0 && draw < 1) {
         const u = n / steps, x = lerp(-80, W + 80, u);
-        const y = 880 - offset * 0.9 + Math.sin(u * Math.PI) * -(170 + offset * 0.6) + u * 40;
+        const y = v(880, 1480) - offset * 0.9 + Math.sin(u * Math.PI) * -(v(170, 120) + offset * 0.6) + u * 40;
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
       }
     }
     ctx.restore();
-    const scrim = ctx.createLinearGradient(0, 0, 1100, 0);
+    const scrim = P ? ctx.createLinearGradient(0, 250, 0, 620) : ctx.createLinearGradient(0, 0, 1100, 0);
     scrim.addColorStop(0, 'rgba(4,6,11,0.85)'); scrim.addColorStop(1, 'rgba(4,6,11,0)');
-    ctx.fillStyle = scrim; ctx.fillRect(0, 0, 1100, 420);
-    text(ctx, '長曝光', 150, 250, { size: 120, weight: 600, alpha: eo3(seg(t, 12.1, 12.45)) });
-    text(ctx, '車軌・流水・星軌，不用腳架也能試', 156, 320, { size: 36, color: C.ash, alpha: eo3(seg(t, 12.25, 12.6)) });
+    ctx.fillStyle = scrim; ctx.fillRect(0, 0, v(1100, W), v(420, 620));
+    const [lx, ly, lalign] = v([150, 250, 'left'], [540, 450, 'center']);
+    text(ctx, '長曝光', lx, ly, { size: 120, weight: 600, align: lalign, alpha: eo3(seg(t, 12.1, 12.45)) });
+    text(ctx, '車軌・流水・星軌，不用腳架也能試', lx + v(6, 0), ly + 70, { size: v(36, 34), color: C.ash, align: lalign, alpha: eo3(seg(t, 12.25, 12.6)) });
     // Apple Watch
     const slide = eoBack(seg(t, 12.55, 12.95));
-    const wx = lerp(W + 200, 1560, slide), wy = 250;
-    ctx.save(); ctx.translate(wx, wy);
+    const wx = lerp(W + 200, v(1560, 540), slide), wy = v(250, 820), ws = v(1, 1.15);
+    ctx.save(); ctx.translate(wx, wy); ctx.scale(ws, ws);
     ctx.fillStyle = '#1b1b1d';
     ctx.beginPath(); ctx.roundRect(-110, -130, 220, 260, 56); ctx.fill();
     ctx.fillStyle = '#2a2a2e'; ctx.fillRect(108, -40, 14, 56);
@@ -592,22 +620,24 @@
     ctx.restore();
     ctx.restore();
     ctx.save(); ctx.globalAlpha = slide; ctx.fillStyle = 'rgba(4,6,11,0.85)';
-    ctx.beginPath(); ctx.roundRect(1350, 400, 420, 56, 28); ctx.fill(); ctx.restore();
-    text(ctx, 'Apple Watch 看取景、按快門', 1560, 440, { size: 30, color: C.paper, align: 'center', alpha: slide });
+    const ly2 = wy + 130 * ws + 60;
+    ctx.beginPath(); ctx.roundRect(wx - 210, ly2 - 40, 420, 56, 28); ctx.fill(); ctx.restore();
+    text(ctx, 'Apple Watch 看取景、按快門', wx, ly2, { size: 30, color: C.paper, align: 'center', alpha: slide });
   }
 
   // 收尾：Logo、標語、快門一閃。
   function sceneOutro(ctx, t) {
     ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H);
-    const cx = W / 2, cy = 470;
+    const cx = W / 2, cy = v(470, 860);
     const snap = eoBack(seg(t, 13.5, 13.95));
-    brackets(ctx, lerpRect({ x: 0, y: 0, w: W, h: H }, { x: cx - 470, y: cy - 250, w: 940, h: 420 }, snap), lerp(160, 70, snap), C.brass, 5);
+    const box = v({ x: cx - 470, y: cy - 250, w: 940, h: 420 }, { x: cx - 380, y: cy - 240, w: 760, h: 400 });
+    brackets(ctx, lerpRect({ x: 0, y: 0, w: W, h: H }, box, snap), lerp(160, 70, snap), C.brass, 5);
     const s = lerp(1.25, 1, eo3(seg(t, 13.55, 14.1)));
     ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
     text(ctx, 'Kaku', 0, 60, { size: 210, weight: 600, align: 'center', alpha: eo3(seg(t, 13.55, 13.95)) });
     ctx.restore();
-    riseText(ctx, '教你站哪、怎麼拿的底片感相機', cx, 760, t, 13.85, { size: 60, weight: 400, stagger: 0.022, dur: 0.35, align: 'center' });
-    text(ctx, '即 將 上 架　A P P   S T O R E', cx, 850, { size: 30, font: SANS, color: C.brass, align: 'center', alpha: eo3(seg(t, 14.2, 14.5)) });
+    riseText(ctx, '教你站哪、怎麼拿的底片感相機', cx, cy + v(290, 300), t, 13.85, { size: v(60, 54), weight: 400, stagger: 0.022, dur: 0.35, align: 'center' });
+    text(ctx, '即 將 上 架　A P P   S T O R E', cx, cy + v(380, 390), { size: v(30, 28), font: SANS, color: C.brass, align: 'center', alpha: eo3(seg(t, 14.2, 14.5)) });
     flash(ctx, t, 14.82, 0.18, 0.9);
     // 最後幾格淡到黑，接回開頭。
     ctx.fillStyle = `rgba(0,0,0,${eiExpo(seg(t, 14.9, 15))})`; ctx.fillRect(0, 0, W, H);
@@ -633,14 +663,17 @@
     const frame = Math.floor(t * 30);
     const tc = `00:00:${String(Math.floor(frame / 30)).padStart(2, '0')}:${String(frame % 30).padStart(2, '0')}`;
     text(ctx, tc, W - 72, 70, { size: 22, font: MONO, color: C.paper, align: 'right', alpha: 0.7 });
-    text(ctx, '示範照片由 AI 生成', 72, H - 62, { size: 18, font: SANS, color: C.ash, alpha: 0.75 });
+    if (P) text(ctx, '示範照片由 AI 生成', W / 2, 272, { size: 22, font: SANS, color: C.ash, align: 'center', alpha: 0.8 });
+    else text(ctx, '示範照片由 AI 生成', 72, H - 62, { size: 18, font: SANS, color: C.ash, alpha: 0.75 });
     ctx.fillStyle = 'rgba(238,232,221,0.14)'; ctx.fillRect(72, H - 44, W - 144, 2);
     ctx.fillStyle = C.brass; ctx.fillRect(72, H - 44, (W - 144) * (t / DURATION), 2);
     for (const [at] of CHAPTERS) ctx.fillRect(72 + (W - 144) * (at / DURATION) - 1, H - 50, 2, 14);
     ctx.restore();
   }
 
-  function render(ctx, t) {
+  function render(ctx, t, orientation = 'landscape') {
+    [W, H] = SIZES[orientation];
+    P = orientation === 'portrait';
     t = ((t % DURATION) + DURATION) % DURATION;
     ctx.save();
     ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H);
@@ -660,9 +693,9 @@
     hud(ctx, t);
     for (const at of [7.6, 9.8, 12.0, 13.4]) shutter(ctx, t, at);
     // 暗角與顆粒
-    const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.95);
-    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.42)');
-    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    const vig = ctx.createRadialGradient(W / 2, H / 2, v(H * 0.35, 480), W / 2, H / 2, v(H * 0.95, 1150));
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.42)');
+    ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
     ctx.save();
     ctx.globalAlpha = 0.07; ctx.globalCompositeOperation = 'overlay';
     const frame = Math.floor(t * 24);
@@ -673,28 +706,36 @@
   }
 
   // ---------- 播放 ----------
-  function mount(canvas) {
+  // orientation：'landscape'、'portrait'，或每次尺寸改變時回傳其中之一的函式。輸出時用網址的 ?orient=。
+  function mount(canvas, { orientation = params.get('orient') || 'landscape' } = {}) {
     const ctx = canvas.getContext('2d');
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const orient = () => (typeof orientation === 'function' ? orientation() : orientation);
     let playing = false, loaded = false, start = null, pausedAt = 14.6; // 靜止時停在字都出來的收尾畫面
+    let current = orient();
     function size() {
+      current = orient();
+      const [w, h] = SIZES[current];
       const dpr = exporting ? 1 : Math.min(window.devicePixelRatio || 1, 2);
-      const cssW = exporting ? W : canvas.clientWidth || W;
+      const cssW = exporting ? w : canvas.clientWidth || w;
       canvas.width = Math.round(cssW * dpr);
-      canvas.height = Math.round(cssW * dpr * H / W);
-      ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+      canvas.height = Math.round(cssW * dpr * h / w);
+      ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
+      if (loaded && !playing) render(ctx, pausedAt, current);
     }
     size();
-    if (!exporting) window.addEventListener('resize', () => { size(); if (loaded && !playing) render(ctx, pausedAt); });
+    if (!exporting) window.addEventListener('resize', size);
     const draw = now => {
       if (!playing) return;
       if (start === null) start = now - pausedAt * 1000;
       pausedAt = ((now - start) / 1000) % DURATION;
-      render(ctx, pausedAt);
+      render(ctx, pausedAt, current);
       requestAnimationFrame(draw);
     };
     const api = {
-      render: t => render(ctx, t),
+      render: t => render(ctx, t, current),
+      resize: size,
+      get orientation() { return current; },
       get playing() { return playing; },
       play() {
         if (playing) return;
@@ -706,7 +747,7 @@
     ready.then(() => {
       loaded = true;
       window.KakuReel.isReady = true;
-      if (playing) requestAnimationFrame(draw); else render(ctx, pausedAt);
+      if (playing) requestAnimationFrame(draw); else render(ctx, pausedAt, current);
     });
     // 減少動態效果時停在收尾的畫面，按播放才動。
     if (!reduce && !exporting) api.play();

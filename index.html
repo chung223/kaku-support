@@ -29,7 +29,7 @@
   </div>
   <div class="reel-controls">
     <button id="reel-toggle" type="button" aria-controls="reel"><span aria-hidden="true" class="icon"></span><span class="label">暫停</span></button>
-    <a href="reel.mp4" download="kaku-reel.mp4">下載影片（MP4・15 秒）</a>
+    <p class="downloads">下載影片（有音效）：<a href="reel.mp4" download="kaku-reel.mp4">橫式 16:9</a>・<a href="reel-vertical.mp4" download="kaku-reel-vertical.mp4">直式 9:16</a></p>
   </div>
 </section>
 
@@ -169,7 +169,10 @@
 (() => {
   const canvas = document.getElementById('reel');
   const button = document.getElementById('reel-toggle');
-  const reel = KakuReel.mount(canvas);
+  // 手機直拿時換成直式（跟 home.css 的 media query 一樣）。
+  const portrait = matchMedia('(orientation: portrait) and (max-width: 600px)');
+  const reel = KakuReel.mount(canvas, { orientation: () => (portrait.matches ? 'portrait' : 'landscape') });
+  portrait.addEventListener('change', () => reel.resize());
   // 使用者按了暫停就一直停著；否則捲出畫面時自動停、捲回來再播，省電。
   let held = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const sync = () => {
