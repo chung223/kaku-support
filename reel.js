@@ -34,20 +34,28 @@
   const images = {};
   const sources = { print: 'img/instant.jpg', trails: 'img/trails.jpg' };
   for (const [id] of LOOKS) sources[id] = `looks/${id}.jpg`;
+  const params = new URLSearchParams(location.search);
+  const exporting = params.has('export');
   const loadImage = (key, src) => new Promise(resolve => {
     const img = new Image();
     img.onload = () => { images[key] = img; resolve(); };
     img.onerror = () => resolve();
     img.src = src;
   });
-  const fontText = 'Kaku構圖相機教你站哪怎麼拿的底片感鏡頭往下一點剛好人像風景美食即時引導濾鏡款拍到就是看見拍立得機一卷張送洗後才看得魔幻時刻藍調長曝光車軌流水星軌遙控即將上架原色琥珀紀實昨日港光霧白晚霞山海墨食光柔千禧花樣奶油茶即影負沖銀鹽劇照童話錄影帶還有0123456789:–・、';
-  const ready = Promise.all([
-    ...Object.entries(sources).map(([k, v]) => loadImage(k, v)),
-    document.fonts ? Promise.all([
-      document.fonts.load(`600 100px ${SERIF}`, fontText),
-      document.fonts.load(`400 100px ${SERIF}`, fontText),
-    ]).catch(() => {}) : Promise.resolve(),
-  ]);
+  const fontText = 'Kaku構圖相機教你站哪怎麼拿的底片感鏡頭往下一點剛好人像風景美食即時引導濾鏡款拍到就是看見拍立得機一卷張送洗後才看得魔幻時刻藍調長曝光車軌流水星軌遙控即將上架原色琥珀紀實昨日港光霧白晚霞山海墨食光柔千禧花樣奶油茶即影負沖銀鹽劇照童話錄影帶還有全部0123456789:–・、';
+  const fontsReady = document.fonts ? Promise.all([
+    document.fonts.load(`600 100px ${SERIF}`, fontText),
+    document.fonts.load(`400 100px ${SERIF}`, fontText),
+  ]).catch(() => {}) : Promise.resolve();
+  // 先載第一張照片（原色），其他在背景載；還沒到的濾鏡先用原色代替，到了就換上。
+  const first = loadImage('original', sources.original);
+  const rest = Object.entries(sources).filter(([k]) => k !== 'original').map(([k, v]) => loadImage(k, v));
+  const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+  // 輸出影片時每一格都要完整，全部等到；網頁上最多等 4 秒就開始播（字型晚到會自動換上）。
+  const ready = exporting
+    ? Promise.all([first, fontsReady, ...rest])
+    : Promise.race([Promise.all([first, fontsReady]), timeout(4000)]);
+  const lookImage = id => images[id] || images.original;
 
   // 底片顆粒：一塊 256×256 的雜訊，每格換位置平鋪。
   const grain = document.createElement('canvas');
@@ -281,10 +289,10 @@
   function drawLooks(ctx, F, t) {
     const { index, local } = lookPhase(t);
     if (t < SLICES) {
-      cover(ctx, images[LOOKS[Math.max(0, index - 1)][0]], F);
+      cover(ctx, lookImage(LOOKS[Math.max(0, index - 1)][0]), F);
       ctx.save();
       ctx.beginPath(); ctx.rect(F.x, F.y, F.w, F.h * eo3(clamp(local / 0.6))); ctx.clip();
-      cover(ctx, images[LOOKS[index][0]], F);
+      cover(ctx, lookImage(LOOKS[index][0]), F);
       ctx.restore();
       if (local < 0.6) {
         ctx.fillStyle = 'rgba(227,198,141,0.6)';
@@ -292,14 +300,14 @@
       }
       return;
     }
-    cover(ctx, images[LOOKS[LOOKS.length - 1][0]], F);
+    cover(ctx, lookImage(LOOKS[LOOKS.length - 1][0]), F);
     const n = LOOKS.length - 1, edges = i => Math.round(F.x + (F.w * i) / n);
     for (let j = 0; j < n; j++) {
       const p = eo3(seg(t, SLICES + j * 0.02, SLICES + j * 0.02 + 0.28));
       if (p <= 0) continue;
       ctx.save();
       ctx.beginPath(); ctx.rect(edges(j), F.y + F.h * (1 - p), edges(j + 1) - edges(j), F.h * p); ctx.clip();
-      cover(ctx, images[LOOKS[j + 1][0]], F);
+      cover(ctx, lookImage(LOOKS[j + 1][0]), F);
       ctx.restore();
     }
     const wipe = eio3(seg(t, SETTLE, SETTLE + 0.32));
@@ -309,7 +317,7 @@
     if (wipe > 0) {
       ctx.save();
       ctx.beginPath(); ctx.rect(F.x, F.y, F.w * wipe, F.h); ctx.clip();
-      cover(ctx, images.amber400, F, lerp(1.0, 1.04, seg(t, SETTLE, 7.6)));
+      cover(ctx, lookImage('amber400'), F, lerp(1.0, 1.04, seg(t, SETTLE, 7.6)));
       ctx.restore();
       if (wipe < 1) { ctx.fillStyle = C.brassHi; ctx.fillRect(F.x + F.w * wipe - 2, F.y, 4, F.h); }
     }
@@ -665,8 +673,6 @@
   }
 
   // ---------- 播放 ----------
-  const params = new URLSearchParams(location.search);
-  const exporting = params.has('export');
   function mount(canvas) {
     const ctx = canvas.getContext('2d');
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
