@@ -3,14 +3,163 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kaku</title>
-<link rel="stylesheet" href="style.css">
+<title>Kaku 構圖相機</title>
+<meta name="description" content="教你站哪、怎麼拿的底片感相機。構圖引導、20 款底片與復古濾鏡、路人幫拍、底片機、拍立得。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="home.css">
 </head>
 <body>
+
+<header class="bar">
+  <a class="wordmark" href="#">Kaku</a>
+  <nav>
+    <a href="#guide">構圖引導</a>
+    <a href="#looks">濾鏡</a>
+    <a href="#more">更多玩法</a>
+    <a href="support.html">支援</a>
+    <a href="#en" lang="en">English</a>
+  </nav>
+</header>
+
 <main>
-<h1>Kaku</h1>
-<p>會教你拍的相機。</p>
-<p><a href="support.html">支援 Support</a> · <a href="privacy.html">隱私權政策 Privacy Policy</a></p>
+
+<section class="hero">
+  <div class="hero-text">
+    <p class="eyebrow">iPhone 相機 App・即將上架</p>
+    <h1>教你站哪、<br>怎麼拿的底片感相機</h1>
+    <p>幫別人拍照，常被抱怨「腿怎麼那麼短」「怎麼切到腳」。Kaku 分析畫面裡的人和場景，直接提示手機放低一點、鏡頭往上一點、人往中間站。到位時提示變成金色，手機輕震一下。</p>
+    <p class="note">所有分析都在手機上完成，沒有帳號、沒有廣告、不蒐集資料。</p>
+  </div>
+  <figure class="phone" aria-label="Kaku 人像模式的畫面示意">
+    <div class="screen">
+      <img src="img/portrait.jpg" alt="街上站著的人，套上柔光 160 濾鏡" width="900" height="1200">
+      <span class="pill good">✓ 剛好<small>頭頂留一格、腳貼底邊</small></span>
+      <span class="brackets" aria-hidden="true"></span>
+      <span class="tag">柔光 160 <em>Soft 160</em></span>
+    </div>
+  </figure>
+</section>
+
+<section id="guide" class="block">
+  <h2>構圖引導</h2>
+  <p class="lead">選對模式，Kaku 就知道要幫你注意什麼。箭頭告訴你往哪移，刻度告訴你手機要仰還是俯，框框是人該站的位置。</p>
+  <div class="cards three">
+    <article class="card">
+      <img src="img/portrait.jpg" alt="全身人像" loading="lazy" width="900" height="1200">
+      <h3>人像</h3>
+      <p>看全身的姿勢，提示頭頂留多少、腳貼在哪、手機該多高、要仰還是俯。</p>
+      <ul class="hints"><li>手機放低一點</li><li>別切到腳</li></ul>
+    </article>
+    <article class="card">
+      <img src="img/landscape.jpg" alt="湖面夕陽" loading="lazy" width="900" height="1200">
+      <h3>風景</h3>
+      <p>地平線放三分線、天空留多少、倒影、前景、大景小人。</p>
+      <ul class="hints"><li>地平線別放正中間</li><li>鏡頭往上一點，天空多一些</li></ul>
+    </article>
+    <article class="card">
+      <img src="img/food.jpg" alt="俯拍的牛肉麵" loading="lazy" width="900" height="1200">
+      <h3>美食</h3>
+      <p>依菜色建議俯拍、斜拍或平視，主菜太小、手入鏡時提醒你。</p>
+      <ul class="hints"><li>這道適合俯拍</li><li>換 2 倍，食物比較不變形</li></ul>
+    </article>
+  </div>
+</section>
+
+<section id="looks" class="block">
+  <h2>20 款濾鏡，拍到的就是看到的</h2>
+  <p class="lead">同一張照片套上每一款濾鏡。取景時就套上了，照片、原況照片、錄影都一樣。皮膚上只套一部分色彩，臉色不會變紅或發綠。</p>
+  <div class="looks">
+    <figure><img src="looks/original.jpg" alt="原色（Original）" loading="lazy" width="720" height="960"><figcaption>原色<span lang="en">Original</span></figcaption></figure>
+    <figure><img src="looks/amber400.jpg" alt="琥珀 400（Amber 400）" loading="lazy" width="720" height="960"><figcaption>琥珀 400<span lang="en">Amber 400</span></figcaption></figure>
+    <figure><img src="looks/reportage.jpg" alt="紀實（Reportage）" loading="lazy" width="720" height="960"><figcaption>紀實<span lang="en">Reportage</span></figcaption></figure>
+    <figure><img src="looks/yesterday.jpg" alt="昨日（Yesterday）" loading="lazy" width="720" height="960"><figcaption>昨日<span lang="en">Yesterday</span></figcaption></figure>
+    <figure><img src="looks/harbor.jpg" alt="港光（Harbor）" loading="lazy" width="720" height="960"><figcaption>港光<span lang="en">Harbor</span></figcaption></figure>
+    <figure><img src="looks/mist.jpg" alt="霧白（Mist）" loading="lazy" width="720" height="960"><figcaption>霧白<span lang="en">Mist</span></figcaption></figure>
+    <figure><img src="looks/afterglow.jpg" alt="晚霞（Afterglow）" loading="lazy" width="720" height="960"><figcaption>晚霞<span lang="en">Afterglow</span></figcaption></figure>
+    <figure><img src="looks/vista.jpg" alt="山海（Vista）" loading="lazy" width="720" height="960"><figcaption>山海<span lang="en">Vista</span></figcaption></figure>
+    <figure><img src="looks/ink.jpg" alt="墨（Ink）" loading="lazy" width="720" height="960"><figcaption>墨<span lang="en">Ink</span></figcaption></figure>
+    <figure><img src="looks/savor.jpg" alt="食光（Savor）" loading="lazy" width="720" height="960"><figcaption>食光<span lang="en">Savor</span></figcaption></figure>
+    <figure><img src="looks/soft160.jpg" alt="柔光 160（Soft 160）" loading="lazy" width="720" height="960"><figcaption>柔光 160<span lang="en">Soft 160</span></figcaption></figure>
+    <figure><img src="looks/y2k.jpg" alt="千禧（Y2K）" loading="lazy" width="720" height="960"><figcaption>千禧<span lang="en">Y2K</span></figcaption></figure>
+    <figure><img src="looks/mood.jpg" alt="花樣（Mood）" loading="lazy" width="720" height="960"><figcaption>花樣<span lang="en">Mood</span></figcaption></figure>
+    <figure><img src="looks/cream.jpg" alt="奶油（Cream）" loading="lazy" width="720" height="960"><figcaption>奶油<span lang="en">Cream</span></figcaption></figure>
+    <figure><img src="looks/milktea.jpg" alt="奶茶（Milk Tea）" loading="lazy" width="720" height="960"><figcaption>奶茶<span lang="en">Milk Tea</span></figcaption></figure>
+    <figure><img src="looks/instant.jpg" alt="即影（Instant）" loading="lazy" width="720" height="960"><figcaption>即影<span lang="en">Instant</span></figcaption></figure>
+    <figure><img src="looks/cross.jpg" alt="負沖（Cross）" loading="lazy" width="720" height="960"><figcaption>負沖<span lang="en">Cross</span></figcaption></figure>
+    <figure><img src="looks/silver.jpg" alt="銀鹽（Silver）" loading="lazy" width="720" height="960"><figcaption>銀鹽<span lang="en">Silver</span></figcaption></figure>
+    <figure><img src="looks/still.jpg" alt="劇照（Still）" loading="lazy" width="720" height="960"><figcaption>劇照<span lang="en">Still</span></figcaption></figure>
+    <figure><img src="looks/storybook.jpg" alt="童話（Storybook）" loading="lazy" width="720" height="960"><figcaption>童話<span lang="en">Storybook</span></figcaption></figure>
+    <figure><img src="looks/camcorder.jpg" alt="錄影帶（Camcorder）" loading="lazy" width="720" height="960"><figcaption>錄影帶<span lang="en">Camcorder</span></figcaption></figure>
+  </div>
+</section>
+
+<section id="more" class="block">
+  <h2>更多玩法</h2>
+  <div class="cards two">
+    <article class="card wide">
+      <img src="img/instant.jpg" alt="拍立得外框的咖啡照片" loading="lazy" width="1002" height="1502">
+      <div>
+        <h3>拍立得</h3>
+        <p>用「即影」拍完，照片從下面吐出來，從一層深藍慢慢顯影。照片本身也有拍立得的米白外框。</p>
+      </div>
+    </article>
+    <article class="card wide">
+      <img src="img/trails.jpg" alt="夜晚街道的車軌" loading="lazy" width="900" height="1200">
+      <div>
+        <h3>長曝光</h3>
+        <p>車軌、絲絹流水、星軌，不用腳架也能試；手機晃動時自動暫停。</p>
+      </div>
+    </article>
+  </div>
+  <div class="cards three text">
+    <article class="card">
+      <h3>路人幫拍</h3>
+      <p>你先取好景，再把手機交給路人。畫面上疊著你取的景，對準了框就變金色，按快門就好。</p>
+    </article>
+    <article class="card">
+      <h3>底片機</h3>
+      <p>裝一卷 24 或 36 張，拍的時候看不到效果。拍完送洗，馬上、1 小時或明天早上拿。</p>
+    </article>
+    <article class="card">
+      <h3>魔幻時刻</h3>
+      <p>算出今天的魔幻時刻和藍調時刻，快到了提醒你，鎖定畫面也看得到倒數。</p>
+    </article>
+    <article class="card">
+      <h3>自動挑片</h3>
+      <p>連拍完自動剔除閉眼、模糊的，推薦最好的幾張，其他的一次刪掉。</p>
+    </article>
+    <article class="card">
+      <h3>Apple Watch 遙控</h3>
+      <p>手錶看取景、倒數、按快門，拍完在手錶上看一眼。</p>
+    </article>
+    <article class="card">
+      <h3>隨手就能拍</h3>
+      <p>鎖定畫面、控制中心、相機控制按鈕直接打開；按住快門連拍、原況照片、4800 萬畫素。</p>
+    </article>
+  </div>
+</section>
+
+<section class="block plans">
+  <h2>免費下載</h2>
+  <p class="lead">免費版有 4 款濾鏡、水平儀、地平線與九宮格。Kaku Pro 解鎖全部濾鏡、構圖引導、長曝光與 Apple Watch 遙控，可以選月訂、年訂或一次買斷。拍過的照片永遠是你的。</p>
+</section>
+
+<section id="en" class="block english" lang="en">
+  <h2>Kaku – Composition Camera</h2>
+  <p>A camera that coaches your shot. Kaku reads the people and scene in the frame and tells you to lower the phone, tilt up a little, or move your subject to the center. When it's right, the hint turns gold and the phone taps gently.</p>
+  <p>20 film and retro looks applied live in the viewfinder, a helper mode for handing your phone to a stranger, a film camera mode that develops later, instant prints, long exposure, golden hour reminders, and an Apple Watch remote. Everything is analyzed on your iPhone. No accounts, no ads, no data collection. Coming soon to the App Store.</p>
+</section>
+
 </main>
+
+<footer class="foot">
+  <p><a href="support.html">支援 Support</a> · <a href="privacy.html">隱私權政策 Privacy</a> · <a href="mailto:kaku@chung.men">kaku@chung.men</a></p>
+  <p class="small">頁面上的示範照片由 AI 生成（MiniMax），濾鏡效果是 Kaku 的濾鏡程式實際算出來的。<br lang="en">Demo photos on this page are AI-generated (MiniMax); the looks are rendered by Kaku's own filter code.</p>
+  <p class="small">© 2026 Kaku</p>
+</footer>
+
+
 </body>
 </html>
